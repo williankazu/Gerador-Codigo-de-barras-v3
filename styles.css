@@ -67,7 +67,7 @@
     .label-card .price { font-weight: 700; font-size: .95rem; white-space: nowrap; color: var(--accent-2); }
 
     .barcode-wrap { width: 100%; display: block; }
-    .barcode-wrap svg { width: 100%; height: auto; display: block; }
+    .barcode-wrap svg, .barcode-wrap canvas { width: 100%; height: auto; display: block; }
 
     .muted { color: #7a7a7a; font-size: .72rem; }
 
@@ -75,12 +75,39 @@
     @page { size: A4 portrait; margin: 8mm; }
 
     @media print {
-      html, body { background: white; }
+      html, body { 
+        background: white !important; 
+        margin: 0;
+        padding: 0;
+      }
       .no-print { display: none !important; }
-      .box, .card, .container, .section { padding: 0 !important; margin: 0 !important; box-shadow: none !important; }
-      .print-sheet { box-shadow: none; padding: 0; }
-      .label-card { background: white !important; border-color: rgba(0,0,0,.12); }
-      .title, .subtitle, .label-card .name, .label-card .price, .muted{ color: #000 !important; }
+      .section { padding: 0 !important; margin: 0 !important; }
+      .container { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+      .columns { margin: 0 !important; }
+      .column:first-child { display: none !important; }
+      .column:last-child { width: 100% !important; flex: none !important; }
+      .box { 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        box-shadow: none !important;
+        background: white !important;
+        border: none !important;
+      }
+      .print-sheet { 
+        box-shadow: none !important; 
+        padding: 8mm !important;
+        background: white !important;
+      }
+      .label-card { 
+        background: white !important; 
+        border-color: rgba(0,0,0,.12) !important;
+        page-break-inside: avoid;
+      }
+      .title, .subtitle, .label-card .name, .label-card .price, .muted { 
+        color: #000 !important; 
+      }
+      canvas[data-hidden-for-print] { display: none !important; }
+      .barcode-img { display: block !important; }
     }
 
     /* Responsivo do painel lateral */

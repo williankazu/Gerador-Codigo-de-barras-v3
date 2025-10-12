@@ -113,6 +113,7 @@
           items.splice(i,1);
           saveState();
           renderItemsTable();
+          buildPreview(); // Atualiza preview após remoção
         });
       });
     };
@@ -183,8 +184,8 @@
         // Área do barcode
         const wrap = document.createElement('div');
         wrap.className = 'barcode-wrap';
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        wrap.appendChild(svg);
+        const canvas = document.createElement('canvas');
+        wrap.appendChild(canvas);
         card.appendChild(wrap);
 
         // Rodapé opcional (código)
@@ -202,18 +203,18 @@
           if (it.format === 'EAN13' && !isValidEANInput(it.code)) {
             throw new Error('EAN‑13 requer 12 ou 13 dígitos');
           }
-          JsBarcode(svg, it.code, {
+          JsBarcode(canvas, it.code, {
             format: it.format,
-            displayValue: false, // texto do código já exibido por nós
+            displayValue: false,
             height: barHeightPx,
             width: barWidthPx,
             fontSize: fontSizePx,
             margin: 0,
             lineColor: '#111',
           });
-          svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-          svg.style.width = '100%';
-          svg.style.height = 'auto';
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+          
         } catch (err) {
           const warn = document.createElement('div');
           warn.className = 'has-text-danger is-size-7';
@@ -223,12 +224,67 @@
       });
     };
 
+    // ==== Suporte de impressão confiável (canvas -> imagem) ====
+    let _printSwap = [];
+    const swapCanvasesForImages = () => {
+      _printSwap = [];
+      const canvases = $$('#print-area canvas');
+      console.log('Convertendo', canvases.length, 'canvas para imagens...');
+      
+      canvases.forEach(c => {
+        try {
+          const img = new Image();
+          const dataURL = c.toDataURL('image/png');
+          img.src = dataURL;
+          img.style.width = '100%';
+          img.style.height = 'auto';
+          img.style.display = 'block';
+          img.className = 'barcode-img';
+          
+          c.dataset.hiddenForPrint = '1';
+          c.style.display = 'none';
+          c.parentNode.insertBefore(img, c.nextSibling);
+          _printSwap.push({ canvas: c, img });
+        } catch(err) {
+          console.error('Erro ao converter canvas:', err);
+        }
+      });
+      console.log('Conversão concluída:', _printSwap.length, 'imagens criadas');
+    };
+    
+    const restoreCanvases = () => {
+      console.log('Restaurando canvases...');
+      _printSwap.forEach(({canvas, img}) => {
+        if (img && img.parentNode) img.parentNode.removeChild(img);
+        if (canvas) {
+          canvas.style.display = '';
+          delete canvas.dataset.hiddenForPrint;
+        }
+      });
+      _printSwap = [];
+    };
+    
+    // Eventos de impressão
+    window.addEventListener('beforeprint', () => {
+      console.log('beforeprint disparado');
+      swapCanvasesForImages();
+    });
+    
+    window.addEventListener('afterprint', () => {
+      console.log('afterprint disparado');
+      restoreCanvases();
+    });
+
     // Eventos ----------------------------
     document.addEventListener('DOMContentLoaded', () => {
       loadState();
       renderItemsTable();
       applyGridVars();
-      if (items.length) buildPreview();
+      if (items.length) {
+        buildPreview();
+      } else {
+        $('#print-area').innerHTML = '<div class="has-text-grey has-text-centered p-6">Nenhum item para exibir. Adicione produtos para gerar o preview.</div>';
+      }
     });
 
     $('#product-form').addEventListener('submit', (e) => {
@@ -255,6 +311,7 @@
       items.push({ name, priceStr, code, format, qty });
       saveState();
       renderItemsTable();
+      buildPreview(); // Atualiza preview automaticamente
       (e.target).reset();
       $('#p-qty').value = 1;
       $('#p-format').value = 'CODE128';
@@ -273,6 +330,7 @@
       );
       saveState();
       renderItemsTable();
+      buildPreview(); // Atualiza preview automaticamente
     });
 
     $('#btn-clear').addEventListener('click', () => {
@@ -280,7 +338,7 @@
       items = [];
       saveState();
       renderItemsTable();
-      $('#print-area').innerHTML = '';
+      $('#print-area').innerHTML = '<div class="has-text-grey has-text-centered p-6">Nenhum item para exibir. Adicione produtos para gerar o preview.</div>';
     });
 
     $('#btn-export').addEventListener('click', () => {
@@ -303,6 +361,7 @@
             items = data.items;
             saveState();
             renderItemsTable();
+            buildPreview(); // Atualiza preview após importar
           } else {
             alert('Arquivo inválido.');
           }
@@ -317,7 +376,10 @@
     $('#btn-preview').addEventListener('click', () => {
       saveState();
       buildPreview();
-      $('#print-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Scroll suave até a área de preview
+      setTimeout(() => {
+        $('#print-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     });
 
     // Atualiza variáveis de grade ao alterar qualquer input de layout
@@ -325,7 +387,7 @@
     .forEach(id => {
       $(id).addEventListener('change', () => {
         saveState();
-        applyGridVars();
+        if (items.length > 0) buildPreview(); // Só reconstrói se houver itens
       });
     });
 
@@ -349,7 +411,14 @@
       if (!items.length) {
         if (!confirm('Nenhum item na lista. Imprimir mesmo assim?')) return;
       }
+      
+      console.log('Preparando impressão...');
       buildPreview();
-      setTimeout(() => window.print(), 100);
+      
+      // Aguarda renderização completa antes de imprimir
+      setTimeout(() => {
+        console.log('Iniciando impressão');
+        window.print();
+      }, 800);
     });
   
