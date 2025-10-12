@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador de Código de Barras • A4 • Bulma</title>
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <div class="columns is-variable is-6">
+        <!-- Painel de Controles -->
+        <div class="column is-12-tablet is-4-desktop">
+          <div class="box sidebar-sticky">
+            <h1 class="title is-4">Gerador de Código de Barras</h1>
+            <p class="subtitle is-6">Gerador para Impressao A4</p>
+
+            <div class="content">
+              <p class="is-size-7 has-text-grey">Adicione produtos (nome, preço, código e tipo). Gere o preview e imprima em A4. Para <em>EAN‑13</em>, use 12 ou 13 dígitos (o dígito verificador é calculado se faltar). O preço é formatado como <strong>R$</strong>.</p>
+            </div>
+
+            <!-- Form Produto -->
+            <form id="product-form" class="mb-4">
+              <div class="field">
+                <label class="label">Nome do produto</label>
+                <div class="control has-icons-left">
+                  <input id="p-name" class="input" type="text" placeholder="Ex.: Fita Crepe 18mm" required>
+                  <span class="icon is-small is-left"><i class="fas fa-tag"></i></span>
+                </div>
+              </div>
+
+              <div class="field is-horizontal">
+                <div class="field-body">
+                  <div class="field">
+                    <label class="label">Preço (R$)</label>
+                    <div class="control has-icons-left">
+                      <input id="p-price" class="input" inputmode="decimal" placeholder="Ex.: 12,90">
+                      <span class="icon is-small is-left"><i class="fas fa-money-bill-wave"></i></span>
+                    </div>
+                    <p class="help is-info">Aceita 12,90 / 1290 / 12.9 — sempre exibimos como <strong>R$</strong>.</p>
+                  </div>
+                  <div class="field">
+                    <label class="label">Quantidade de rótulos</label>
+                    <div class="control">
+                      <input id="p-qty" class="input" type="number" min="1" value="1" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field is-horizontal">
+                <div class="field-body">
+                  <div class="field">
+                    <label class="label">Código (valor)</label>
+                    <div class="control has-icons-left">
+                      <input id="p-code" class="input" type="text" placeholder="Ex.: 7891234567890 ou ABC123" required>
+                      <span class="icon is-small is-left"><i class="fas fa-barcode"></i></span>
+                    </div>
+                    <p class="help is-info">EAN‑13: apenas dígitos (12 ou 13). CODE128: letras/números.</p>
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mt-2">
+                      <label class="checkbox">
+                        <input id="p-auto" type="checkbox"> Gerar automaticamente
+                      </label>
+                      <button type="button" class="button is-warning is-light is-small" id="btn-generate">
+                        <span class="icon"><i class="fas fa-rotate"></i></span>
+                        <span>Gerar agora</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label class="label">Formato</label>
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select id="p-format">
+                          <option value="CODE128" selected>CODE128 (genérico)</option>
+                          <option value="EAN13">EAN‑13 (varejo)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field is-grouped">
+                <div class="control">
+                  <button class="button is-primary" type="submit">Adicionar</button>
+                </div>
+                <div class="control">
+                  <button class="button is-light" type="button" id="btn-demo">Exemplo rápido</button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Lista de itens -->
+            <div class="block">
+              <h2 class="title is-6">Itens adicionados</h2>
+              <div class="table-container" style="max-height: 220px; overflow:auto;">
+                <table class="table is-fullwidth is-hoverable is-narrow" id="items-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Código</th>
+                      <th>Tipo</th>
+                      <th>Qtd</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="buttons">
+                <button class="button is-danger is-light" id="btn-clear">Limpar lista</button>
+                <button class="button" id="btn-export">Exportar JSON</button>
+                <label class="button">
+                  Importar JSON
+                  <input type="file" id="file-import" accept="application/json" hidden>
+                </label>
+              </div>
+            </div>
+
+            <!-- Layout Impressão -->
+            <div class="block">
+              <h2 class="title is-6">Layout de impressão (A4)</h2>
+              <div class="columns is-mobile is-multiline">
+                <div class="column is-6">
+                  <label class="label is-size-7">Colunas</label>
+                  <input id="opt-cols" class="input" type="number" min="1" max="6" value="3">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Gap (mm)</label>
+                  <input id="opt-gap" class="input" type="number" min="0" step="0.5" value="4">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Largura do rótulo (mm)</label>
+                  <input id="opt-w" class="input" type="number" min="20" step="0.5" value="65">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Altura do rótulo (mm)</label>
+                  <input id="opt-h" class="input" type="number" min="15" step="0.5" value="35">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Padding interno (mm)</label>
+                  <input id="opt-pad" class="input" type="number" min="0" step="0.5" value="3">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Altura do código (mm)</label>
+                  <input id="opt-bar-h" class="input" type="number" min="8" step="0.5" value="18">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Espessura da barra (px)</label>
+                  <input id="opt-bar-w" class="input" type="number" min="1" max="3" step="0.1" value="1.6">
+                </div>
+                <div class="column is-6">
+                  <label class="label is-size-7">Tamanho texto do código (px)</label>
+                  <input id="opt-font" class="input" type="number" min="8" max="18" step="1" value="12">
+                </div>
+                <div class="column is-12">
+                  <label class="checkbox">
+                    <input id="opt-borders" type="checkbox" checked> Mostrar bordas dos rótulos
+                  </label>
+                </div>
+                <div class="column is-12">
+                  <label class="checkbox">
+                    <input id="opt-show-name" type="checkbox" checked> Mostrar nome do produto
+                  </label>
+                </div>
+                <div class="column is-12">
+                  <label class="checkbox">
+                    <input id="opt-show-price" type="checkbox" checked> Mostrar preço (R$)
+                  </label>
+                </div>
+                <div class="column is-12">
+                  <label class="checkbox">
+                    <input id="opt-show-code" type="checkbox" checked> Mostrar texto do código abaixo
+                  </label>
+                </div>
+              </div>
+
+              <div class="buttons">
+                <button class="button is-link" id="btn-preview">Gerar/Atualizar Preview</button>
+                <button class="button is-primary" id="btn-print">Imprimir A4</button>
+              </div>
+            </div>
+
+            <p class="has-text-grey is-size-7">Dica: salve como PDF pelo diálogo de impressão do navegador para reutilizar depois.</p>
+          </div>
+        </div>
+
+        <!-- Preview / Página -->
+        <div class="column is-12-tablet is-8-desktop">
+          <div class="box">
+            <div class="no-print mb-3">
+              <strong>Preview da Folha A4</strong>
+              <p class="is-size-7 has-text-grey">A grade abaixo é renderizada em milímetros para corresponder à impressão.</p>
+            </div>
+            <div id="print-area" class="print-sheet"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Font Awesome (ícones do formulário) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/js/all.min.js"></script>
+  <!-- JsBarcode -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

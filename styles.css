@@ -1,0 +1,88 @@
+
+    body { 
+      background: linear-gradient(135deg, #ffe8e6 0%, #fff3e0 100%);
+    }
+
+    /* Paleta pastel laranja/vermelho */
+    :root{
+      --accent: #ff8555;    /* laranja pastel */
+      --accent-2:#ff6f6f;   /* vermelho coral pastel */
+      --accent-3:#ffd1c2;   /* laranja claro */
+      --accent-4:#fff1e6;   /* creme */
+    }
+
+    /* Ajustes de UI pastel */
+    .box { border-top: 4px solid var(--accent); }
+    .title, .subtitle { color: #b13e1f; }
+    .button.is-primary{ background-color: var(--accent)!important; border-color: var(--accent)!important; }
+    .button.is-link{ background-color: var(--accent-2)!important; border-color: var(--accent-2)!important; }
+    .button.is-warning.is-light{ background-color: var(--accent-4)!important; }
+    a, .has-text-link{ color: var(--accent-2)!important; }
+
+    /* Grade A4 em mm */
+    :root {
+      --cols: 3;
+      --label-w: 65mm;   /* largura do rótulo */
+      --label-h: 35mm;   /* altura do rótulo  */
+      --gap: 4mm;        /* espaçamento entre rótulos */
+      --pad: 3mm;        /* padding interno do rótulo */
+      --barcode-height-mm: 18; /* altura do código em mm (convertida para px no JS) */
+      --barcode-font-size: 12;  /* tamanho da fonte do texto do código em px */
+      --bar-width: 1.6;   /* espessura da barra em px */
+    }
+
+    .print-sheet {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), var(--label-w));
+      grid-auto-rows: var(--label-h);
+      gap: var(--gap);
+      justify-content: center;
+      background: white;
+      padding: 10mm;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+
+    .label-card {
+      background: linear-gradient(180deg, rgba(255,133,85,.06), rgba(255,111,111,.06));
+      border: 1px dashed rgba(255,133,85,.35);
+      border-radius: 8px;
+      padding: var(--pad);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      overflow: hidden;
+    }
+    .label-card .topline {
+      width: 100%;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: .5rem;
+      margin-bottom: .25rem;
+    }
+    .label-card .name { font-weight: 600; font-size: .9rem; line-height: 1.1; color:#b34c2e; }
+    .label-card .price { font-weight: 700; font-size: .95rem; white-space: nowrap; color: var(--accent-2); }
+
+    .barcode-wrap { width: 100%; display: block; }
+    .barcode-wrap svg { width: 100%; height: auto; display: block; }
+
+    .muted { color: #7a7a7a; font-size: .72rem; }
+
+    /* Modo impressão */
+    @page { size: A4 portrait; margin: 8mm; }
+
+    @media print {
+      html, body { background: white; }
+      .no-print { display: none !important; }
+      .box, .card, .container, .section { padding: 0 !important; margin: 0 !important; box-shadow: none !important; }
+      .print-sheet { box-shadow: none; padding: 0; }
+      .label-card { background: white !important; border-color: rgba(0,0,0,.12); }
+      .title, .subtitle, .label-card .name, .label-card .price, .muted{ color: #000 !important; }
+    }
+
+    /* Responsivo do painel lateral */
+    .sidebar-sticky { position: sticky; top: 1rem; }
+  
