@@ -16,10 +16,10 @@
         <div class="column is-12-tablet is-4-desktop">
           <div class="box sidebar-sticky">
             <h1 class="title is-4">Gerador de Código de Barras</h1>
-            <p class="subtitle is-6">Preview e Impressao A4</p>
+            <p class="subtitle is-6">HTML + Bulma + JavaScript | A4</p>
 
             <div class="content">
-              <p class="is-size-7 has-text-grey">Adicione produtos (nome, preço, código e tipo). Gere o preview e imprima em A4. Para <em>EAN‑13</em>, use 12 ou 13 dígitos (o dígito verificador é calculado se faltar). O preço é formatado como <strong>R$</strong>.</p>
+              <p class="is-size-7 has-text-grey">Adicione produtos (nome, preço, código e tipo). Gere o preview e imprima em A4. Para <em>EAN‑13</em>, use 12 dígitos (o 13º é calculado automaticamente) ou 13 dígitos completos (validação do dígito verificador). Códigos gerados usam prefixos brasileiros <strong>789</strong> ou <strong>790</strong>.</p>
             </div>
 
             <!-- Form Produto -->
@@ -56,10 +56,10 @@
                   <div class="field">
                     <label class="label">Código (valor)</label>
                     <div class="control has-icons-left">
-                      <input id="p-code" class="input" type="text" placeholder="Ex.: 7891234567890 ou ABC123" required>
+                      <input id="p-code" class="input" type="text" placeholder="Ex.: 789123456789 (12 dígitos) ou ABC123" required>
                       <span class="icon is-small is-left"><i class="fas fa-barcode"></i></span>
                     </div>
-                    <p class="help is-info">EAN‑13: apenas dígitos (12 ou 13). CODE128: letras/números.</p>
+                    <p class="help is-info">EAN‑13: 12 dígitos (calcula o 13º) ou 13 dígitos (valida). CODE128: letras/números.</p>
                     <div class="is-flex is-justify-content-space-between is-align-items-center mt-2">
                       <label class="checkbox">
                         <input id="p-auto" type="checkbox"> Gerar automaticamente

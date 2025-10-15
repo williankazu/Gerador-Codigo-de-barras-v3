@@ -19,18 +19,47 @@
     };
 
     // ===== Geradores de códigos =====
+    // Gera EAN-13 válido com prefixo brasileiro (789 ou 790)
     const genEAN13 = () => {
-      let base = '';
-      for (let i = 0; i < 12; i++) base += Math.floor(Math.random() * 10);
-      const digits = base.split('').map(Number);
-      let sumOdd = 0, sumEven = 0; // posições 1..12
-      for (let i = 0; i < 12; i++) {
-        if ((i + 1) % 2 === 0) sumEven += digits[i];
-        else sumOdd += digits[i];
+      // Prefixo GS1 Brasil: 789 ou 790
+      const prefix = Math.random() < 0.5 ? '789' : '790';
+      
+      // Gera os 9 dígitos restantes aleatoriamente
+      let base = prefix;
+      for (let i = 0; i < 9; i++) {
+        base += Math.floor(Math.random() * 10);
       }
-      const total = sumOdd + sumEven * 3;
-      const check = (10 - (total % 10)) % 10;
-      return base + String(check);
+      
+      // Calcula o dígito verificador (algoritmo EAN-13 padrão)
+      const digits = base.split('').map(Number);
+      let sum = 0;
+      
+      // Índices pares (0,2,4,6,8,10) multiplicam por 1
+      // Índices ímpares (1,3,5,7,9,11) multiplicam por 3
+      for (let i = 0; i < 12; i++) {
+        sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+      }
+      
+      const checkDigit = (10 - (sum % 10)) % 10;
+      return base + String(checkDigit);
+    };
+    
+    // Valida dígito verificador de um EAN-13
+    const validateEAN13 = (code) => {
+      if (!/^\d{13}$/.test(code)) return false;
+      
+      const digits = code.split('').map(Number);
+      let sum = 0;
+      
+      // Calcula soma dos primeiros 12 dígitos
+      for (let i = 0; i < 12; i++) {
+        sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+      }
+      
+      const calculatedCheck = (10 - (sum % 10)) % 10;
+      const providedCheck = digits[12];
+      
+      return calculatedCheck === providedCheck;
     };
 
     const genCODE128 = (len = 10) => {
@@ -134,8 +163,31 @@
       });
     };
 
-    // Validação básica de EAN13
+    // Validação e normalização de EAN13
     const isValidEANInput = (str) => /^\d{12,13}$/.test(str);
+    
+    const normalizeEAN13 = (code) => {
+      code = code.replace(/\D/g, '');
+      
+      if (code.length === 13) {
+        // Valida o dígito verificador fornecido
+        if (!validateEAN13(code)) {
+          throw new Error('Dígito verificador inválido');
+        }
+        return code;
+      } else if (code.length === 12) {
+        // Calcula e adiciona o dígito verificador
+        const digits = code.split('').map(Number);
+        let sum = 0;
+        for (let i = 0; i < 12; i++) {
+          sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+        }
+        const checkDigit = (10 - (sum % 10)) % 10;
+        return code + String(checkDigit);
+      } else {
+        throw new Error('EAN-13 deve ter 12 ou 13 dígitos');
+      }
+    };
 
     // Gera o preview completo
     const buildPreview = () => {
@@ -200,10 +252,17 @@
 
         // Render do JsBarcode
         try {
-          if (it.format === 'EAN13' && !isValidEANInput(it.code)) {
-            throw new Error('EAN‑13 requer 12 ou 13 dígitos');
+          let codeToRender = it.code;
+          
+          // Para EAN-13, valida e normaliza
+          if (it.format === 'EAN13') {
+            if (!isValidEANInput(it.code)) {
+              throw new Error('EAN‑13 requer 12 ou 13 dígitos');
+            }
+            codeToRender = normalizeEAN13(it.code);
           }
-          JsBarcode(canvas, it.code, {
+          
+          JsBarcode(canvas, codeToRender, {
             format: it.format,
             displayValue: false,
             height: barHeightPx,
@@ -303,9 +362,19 @@
         alert('Preencha nome e código.');
         return;
       }
-      if (format === 'EAN13' && !isValidEANInput(code)) {
-        alert('Para EAN‑13 use apenas dígitos (12 ou 13).');
-        return;
+      
+      // Validação e normalização de EAN-13
+      if (format === 'EAN13') {
+        if (!isValidEANInput(code)) {
+          alert('Para EAN‑13 use 12 ou 13 dígitos numéricos.');
+          return;
+        }
+        try {
+          code = normalizeEAN13(code);
+        } catch (err) {
+          alert('Erro no código EAN-13: ' + err.message);
+          return;
+        }
       }
 
       items.push({ name, priceStr, code, format, qty });
@@ -322,11 +391,11 @@
     });
 
     $('#btn-demo').addEventListener('click', () => {
-      // 3 exemplos rápidos
+      // 3 exemplos rápidos com códigos EAN-13 válidos (dígito verificador correto)
       items.push(
-        { name: 'Fita Crepe 18mm', priceStr: '7,90',  code: '7891020304056', format: 'EAN13', qty: 6 },
+        { name: 'Fita Crepe 18mm', priceStr: '7,90',  code: '7891234567895', format: 'EAN13', qty: 6 },
         { name: 'Parafuso 5x30',   priceStr: '0,50',  code: 'PAR05X30',       format: 'CODE128', qty: 8 },
-        { name: 'Massa Corrida 1kg', priceStr: '22,90', code: '789123456789', format: 'EAN13', qty: 4 },
+        { name: 'Massa Corrida 1kg', priceStr: '22,90', code: '7899876543215', format: 'EAN13', qty: 4 },
       );
       saveState();
       renderItemsTable();
@@ -403,6 +472,17 @@
       $('#btn-generate').addEventListener('click', () => generateAndFill());
     }
     $('#p-format').addEventListener('change', () => {
+      const format = $('#p-format').value;
+      const codeInput = $('#p-code');
+      
+      // Atualiza placeholder baseado no formato
+      if (format === 'EAN13') {
+        codeInput.placeholder = 'Ex.: 789123456789 (12 dígitos)';
+      } else {
+        codeInput.placeholder = 'Ex.: ABC123 ou PROD001';
+      }
+      
+      // Se auto-geração estiver ativa, gera novo código
       if ($('#p-auto') && $('#p-auto').checked) generateAndFill();
     });
 
