@@ -6,24 +6,28 @@
   <title>Gerador de Código de Barras • A4 • Bulma</title>
   <!-- Bulma CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="styles.css">
+ <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <section class="section">
     <div class="container">
       <div class="columns is-variable is-6">
-        <!-- Painel de Controles -->
         <div class="column is-12-tablet is-4-desktop">
           <div class="box sidebar-sticky">
             <h1 class="title is-4">Gerador de Código de Barras</h1>
-            <p class="subtitle is-6">HTML + Bulma + JavaScript | A4</p>
+            <p class="subtitle is-6">Gerador para imprimir | A4</p>
 
             <div class="content">
-              <p class="is-size-7 has-text-grey">Adicione produtos (nome, preço, código e tipo). Gere o preview e imprima em A4. Para <em>EAN‑13</em>, use 12 dígitos (o 13º é calculado automaticamente) ou 13 dígitos completos (validação do dígito verificador). Códigos gerados usam prefixos brasileiros <strong>789</strong> ou <strong>790</strong>.</p>
+              <p class="is-size-7 has-text-grey">Adicione produtos, edite quando necessário, salve listas para reutilizar. Para <em>EAN‑13</em>, use 12 dígitos (o 13º é calculado) ou 13 completos. Códigos gerados usam prefixos brasileiros <strong>789/790</strong>.</p>
             </div>
 
-            <!-- Form Produto -->
             <form id="product-form" class="mb-4">
+              <div id="edit-notice" class="notification is-warning is-light" style="display: none; padding: 0.75rem;">
+                <button class="delete" onclick="cancelEdit()"></button>
+                <strong>Modo de edição ativo</strong><br>
+                <small>Você está editando um produto existente.</small>
+              </div>
+              
               <div class="field">
                 <label class="label">Nome do produto</label>
                 <div class="control has-icons-left">
@@ -40,10 +44,10 @@
                       <input id="p-price" class="input" inputmode="decimal" placeholder="Ex.: 12,90">
                       <span class="icon is-small is-left"><i class="fas fa-money-bill-wave"></i></span>
                     </div>
-                    <p class="help is-info">Aceita 12,90 / 1290 / 12.9 — sempre exibimos como <strong>R$</strong>.</p>
+                    <p class="help is-info">Aceita 12,90 / 1290 / 12.9</p>
                   </div>
                   <div class="field">
-                    <label class="label">Quantidade de rótulos</label>
+                    <label class="label">Quantidade</label>
                     <div class="control">
                       <input id="p-qty" class="input" type="number" min="1" value="1" required>
                     </div>
@@ -54,12 +58,12 @@
               <div class="field is-horizontal">
                 <div class="field-body">
                   <div class="field">
-                    <label class="label">Código (valor)</label>
+                    <label class="label">Código</label>
                     <div class="control has-icons-left">
                       <input id="p-code" class="input" type="text" placeholder="Ex.: 789123456789 (12 dígitos) ou ABC123" required>
                       <span class="icon is-small is-left"><i class="fas fa-barcode"></i></span>
                     </div>
-                    <p class="help is-info">EAN‑13: 12 dígitos (calcula o 13º) ou 13 dígitos (valida). CODE128: letras/números.</p>
+                    <p class="help is-info">EAN‑13: 12 dígitos (calcula o 13º) ou 13 (valida). CODE128: letras/números.</p>
                     <div class="is-flex is-justify-content-space-between is-align-items-center mt-2">
                       <label class="checkbox">
                         <input id="p-auto" type="checkbox"> Gerar automaticamente
@@ -86,15 +90,20 @@
 
               <div class="field is-grouped">
                 <div class="control">
-                  <button class="button is-primary" type="submit">Adicionar</button>
+                  <button class="button is-primary" type="submit">
+                    <span class="icon"><i class="fas fa-plus"></i></span>
+                    <span>Adicionar</span>
+                  </button>
                 </div>
                 <div class="control">
-                  <button class="button is-light" type="button" id="btn-demo">Exemplo rápido</button>
+                  <button class="button is-light" type="button" id="btn-demo">
+                    <span class="icon"><i class="fas fa-magic"></i></span>
+                    <span>Exemplo rápido</span>
+                  </button>
                 </div>
               </div>
             </form>
 
-            <!-- Lista de itens -->
             <div class="block">
               <h2 class="title is-6">Itens adicionados</h2>
               <div class="table-container" style="max-height: 220px; overflow:auto;">
@@ -112,16 +121,32 @@
                 </table>
               </div>
               <div class="buttons">
-                <button class="button is-danger is-light" id="btn-clear">Limpar lista</button>
-                <button class="button" id="btn-export">Exportar JSON</button>
+                <button class="button is-danger is-light" id="btn-clear">
+                  <span class="icon"><i class="fas fa-trash-alt"></i></span>
+                  <span>Limpar lista</span>
+                </button>
+                <button class="button is-info is-light" id="btn-save-list">
+                  <span class="icon"><i class="fas fa-save"></i></span>
+                  <span>Salvar Lista Como...</span>
+                </button>
+                <button class="button is-success is-light" id="btn-load-list">
+                  <span class="icon"><i class="fas fa-folder-open"></i></span>
+                  <span>Carregar Lista Salva</span>
+                </button>
+              </div>
+              <div class="buttons">
+                <button class="button" id="btn-export">
+                  <span class="icon"><i class="fas fa-file-export"></i></span>
+                  <span>Exportar JSON</span>
+                </button>
                 <label class="button">
-                  Importar JSON
+                  <span class="icon"><i class="fas fa-file-import"></i></span>
+                  <span>Importar JSON</span>
                   <input type="file" id="file-import" accept="application/json" hidden>
                 </label>
               </div>
             </div>
 
-            <!-- Layout Impressão -->
             <div class="block">
               <h2 class="title is-6">Layout de impressão (A4)</h2>
               <div class="columns is-mobile is-multiline">
@@ -134,67 +159,72 @@
                   <input id="opt-gap" class="input" type="number" min="0" step="0.5" value="4">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Largura do rótulo (mm)</label>
+                  <label class="label is-size-7">Largura (mm)</label>
                   <input id="opt-w" class="input" type="number" min="20" step="0.5" value="65">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Altura do rótulo (mm)</label>
+                  <label class="label is-size-7">Altura (mm)</label>
                   <input id="opt-h" class="input" type="number" min="15" step="0.5" value="35">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Padding interno (mm)</label>
+                  <label class="label is-size-7">Padding (mm)</label>
                   <input id="opt-pad" class="input" type="number" min="0" step="0.5" value="3">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Altura do código (mm)</label>
+                  <label class="label is-size-7">Altura código (mm)</label>
                   <input id="opt-bar-h" class="input" type="number" min="8" step="0.5" value="18">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Espessura da barra (px)</label>
+                  <label class="label is-size-7">Espessura (px)</label>
                   <input id="opt-bar-w" class="input" type="number" min="1" max="3" step="0.1" value="1.6">
                 </div>
                 <div class="column is-6">
-                  <label class="label is-size-7">Tamanho texto do código (px)</label>
+                  <label class="label is-size-7">Fonte (px)</label>
                   <input id="opt-font" class="input" type="number" min="8" max="18" step="1" value="12">
                 </div>
                 <div class="column is-12">
                   <label class="checkbox">
-                    <input id="opt-borders" type="checkbox" checked> Mostrar bordas dos rótulos
+                    <input id="opt-borders" type="checkbox" checked> Bordas
                   </label>
                 </div>
                 <div class="column is-12">
                   <label class="checkbox">
-                    <input id="opt-show-name" type="checkbox" checked> Mostrar nome do produto
+                    <input id="opt-show-name" type="checkbox" checked> Nome
                   </label>
                 </div>
                 <div class="column is-12">
                   <label class="checkbox">
-                    <input id="opt-show-price" type="checkbox" checked> Mostrar preço (R$)
+                    <input id="opt-show-price" type="checkbox" checked> Preço
                   </label>
                 </div>
                 <div class="column is-12">
                   <label class="checkbox">
-                    <input id="opt-show-code" type="checkbox" checked> Mostrar texto do código abaixo
+                    <input id="opt-show-code" type="checkbox" checked> Texto código
                   </label>
                 </div>
               </div>
 
               <div class="buttons">
-                <button class="button is-link" id="btn-preview">Gerar/Atualizar Preview</button>
-                <button class="button is-primary" id="btn-print">Imprimir A4</button>
+                <button class="button is-link" id="btn-preview">
+                  <span class="icon"><i class="fas fa-eye"></i></span>
+                  <span>Gerar/Atualizar Preview</span>
+                </button>
+                <button class="button is-primary" id="btn-print">
+                  <span class="icon"><i class="fas fa-print"></i></span>
+                  <span>Imprimir A4</span>
+                </button>
               </div>
             </div>
 
-            <p class="has-text-grey is-size-7">Dica: salve como PDF pelo diálogo de impressão do navegador para reutilizar depois.</p>
+            <p class="has-text-grey is-size-7">Dica: salve como PDF via impressão do navegador.</p>
           </div>
         </div>
 
-        <!-- Preview / Página -->
         <div class="column is-12-tablet is-8-desktop">
           <div class="box">
             <div class="no-print mb-3">
               <strong>Preview da Folha A4</strong>
-              <p class="is-size-7 has-text-grey">A grade abaixo é renderizada em milímetros para corresponder à impressão.</p>
+              <p class="is-size-7 has-text-grey">Grade renderizada em milímetros para corresponder à impressão.</p>
             </div>
             <div id="print-area" class="print-sheet"></div>
           </div>
@@ -203,9 +233,7 @@
     </div>
   </section>
 
-  <!-- Font Awesome (ícones do formulário) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/js/all.min.js"></script>
-  <!-- JsBarcode -->
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="./script.js"></script>
 </body>
